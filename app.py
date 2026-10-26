@@ -53,29 +53,35 @@ def create_app() -> Flask:
     app.register_blueprint(org_bp)
     app.register_blueprint(api_bp)
 
-    with app.app_context():
-        inspector = inspect(db.engine)
 
-        if "admins" in inspector.get_table_names():
-            admin_email = app.config.get("ADMIN_EMAIL")
-            admin_password = app.config.get("ADMIN_PASSWORD")
-
-            if admin_email and admin_password:
-                existing = Admin.query.filter_by(email=admin_email).first()
-
-                if not existing:
-                    admin = Admin(
-                        email=admin_email,
-                        password_hash=generate_password_hash(admin_password)
-                    )
-                    db.session.add(admin)
-                    db.session.commit()
 
     return app
 
 
 # Create the application instance for gunicorn
 app = create_app()
+@app.cli.command("create-admin")
+def create_admin():
+    """Create the initial administrator if it does not exist."""
+    admin_email = app.config.get("ADMIN_EMAIL")
+    admin_password = app.config.get("ADMIN_PASSWORD")
+
+    if not admin_email or not admin_password:
+        print("ADMIN_EMAIL or ADMIN_PASSWORD is not configured.")
+        return
+
+    existing = Admin.query.filter_by(email=admin_email).first()
+
+    if not existing:
+        admin = Admin(
+            email=admin_email,
+            password_hash=generate_password_hash(admin_password)
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print("Administrator created.")
+    else:
+        print("Administrator already exists.")
 
 if __name__ == "__main__":
     # When running directly, start the development server
