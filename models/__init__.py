@@ -16,3 +16,4 @@ from .user import User  # noqa: F401
 from .license import License  # noqa: F401
 from .device import Device  # noqa: F401
 from .usage_log import UsageLog  # noqa: F401
+from .order import Order  # noqa: F401
