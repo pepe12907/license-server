@@ -9,7 +9,7 @@ expiry dates. A licence may allow activation on multiple devices up to
 ``utils/license_utils.py``.
 """
 
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 
 from extensions import db
 
@@ -24,7 +24,7 @@ class License(db.Model):
     start_date = db.Column(db.Date, nullable=True)
     expiry_date = db.Column(db.Date, nullable=True)
     max_devices = db.Column(db.Integer, default=1)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     # Relationships
     devices = db.relationship("Device", backref="license", lazy=True)
