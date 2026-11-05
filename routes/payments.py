@@ -279,7 +279,7 @@ def lemonsqueezy_webhook():
         if tx_order.status=="paid" and tx_order.email_sent_at is None:
             try:
                 _send_license_email(tx_order,tx_order.license)
-                tx_order.email_sent_at=datetime.utcnow()
+                tx_order.email_sent_at=datetime.now(timezone.utc).replace(tzinfo=None)
                 db.session.commit()
             except (HTTPError,URLError,TimeoutError,RuntimeError,ValueError):
                 db.session.rollback()
