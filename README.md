@@ -217,3 +217,33 @@ device and records the validation attempt in `usage_logs`.
 
 This project is provided under the MIT License. See the `LICENSE` file
 for details.
+
+## Lemon Squeezy one-time payments
+
+The payment routes support one-time Throne licenses for 60 and 120 days.
+
+Configure these environment variables in Render:
+
+- `LEMONSQUEEZY_API_KEY`: API key from the same Lemon Squeezy mode as the store.
+- `LEMONSQUEEZY_STORE_ID`: Store ID.
+- `LEMONSQUEEZY_VARIANT_60` and `LEMONSQUEEZY_VARIANT_120`: Variant IDs for the two products.
+- `LEMONSQUEEZY_WEBHOOK_SECRET`: Signing secret configured for the webhook.
+- `LEMONSQUEEZY_TEST_MODE=true`: Keep enabled while testing. Set to `false` only when switching to live credentials and live webhook.
+- `RESEND_API_KEY` and `RESEND_FROM_EMAIL`: Resend credentials and a sender address on a verified domain.
+- `PAYMENT_SUCCESS_URL`: Optional website URL to receive the order reference after checkout.
+
+Apply database migrations with the existing Render pre-deploy/start command:
+
+```bash
+flask --app app db upgrade
+```
+
+### Routes
+
+- `POST /payments/checkout`: JSON body with `name`, `email`, and `duration_days` (60 or 120). Returns `checkout_url` and an order reference.
+- `POST /payments/webhook`: Lemon Squeezy webhook receiver. Configure this exact HTTPS URL on the webhook.
+- `GET /payments/order/<order_reference>`: Returns the order status and, after confirmed payment, the generated license key and expiry date.
+
+The webhook validates the HMAC signature, checks the store and test/live mode, verifies the purchased variant, and only creates a license for an order whose status is `paid`. Repeated webhook deliveries do not create duplicate licenses. A full refund revokes the linked license. License email delivery is tracked so a failed email can be retried by a repeated webhook.
+
+Do not commit API keys or webhook secrets to the repository. Configure them as Render environment variables.
