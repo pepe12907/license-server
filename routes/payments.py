@@ -110,6 +110,11 @@ def create_checkout():
     db.session.add(tx_order)
     db.session.commit()
 
+    try:
+        tx_variant_id=int(tx_variant_id)
+    except (TypeError,ValueError):
+        return jsonify({"success":False,"message":"Invalid Lemon Squeezy variant configuration"}),503
+
     tx_attributes={
         "checkout_data":{
             "name":tx_name,
@@ -207,6 +212,11 @@ def lemonsqueezy_webhook():
             db.session.commit()
             return jsonify({"success":True}),200
 
+        tx_item=tx_attributes.get("first_order_item") or {}
+        tx_expected_variant=current_app.config.get(f"LEMONSQUEEZY_VARIANT_{tx_order.duration_days}")
+        if tx_expected_variant and str(tx_item.get("variant_id"))!=str(tx_expected_variant):
+            return jsonify({"success":False,"message":"Unexpected product variant"}),400
+
         if not tx_order.license_id:
             tx_email=(tx_attributes.get("user_email") or tx_order.customer_email).strip().lower()
             tx_name=(tx_attributes.get("user_name") or tx_order.customer_name).strip()
@@ -241,7 +251,7 @@ def lemonsqueezy_webhook():
                 key=generate_license_key()[:16],
                 status="active",
                 start_date=tx_purchase_date,
-                expiry_date=tx_purchase_date+timedelta(days=tx_order.duration_days),
+                expiry_date=tx_purchase_date+timedelta(days=tx_order.duration_days-1),
                 max_devices=1,
             )
             db.session.add(tx_license)
