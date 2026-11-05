@@ -1,8 +1,13 @@
 """Order model for one-time purchases."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from extensions import db
+
+
+# Keep timestamps as naive UTC to match the existing database columns.
+def _utc_now():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class Order(db.Model):
@@ -21,8 +26,8 @@ class Order(db.Model):
     provider_preference_id=db.Column(db.String(100),unique=True,nullable=True)
     provider_payment_id=db.Column(db.String(100),unique=True,nullable=True)
     license_id=db.Column(db.Integer,db.ForeignKey("licenses.id"),nullable=True)
-    created_at=db.Column(db.DateTime,nullable=False,default=datetime.utcnow)
-    updated_at=db.Column(db.DateTime,nullable=False,default=datetime.utcnow,onupdate=datetime.utcnow)
+    created_at=db.Column(db.DateTime,nullable=False,default=_utc_now)
+    updated_at=db.Column(db.DateTime,nullable=False,default=_utc_now,onupdate=_utc_now)
     paid_at=db.Column(db.DateTime,nullable=True)
     email_sent_at=db.Column(db.DateTime,nullable=True)
 
