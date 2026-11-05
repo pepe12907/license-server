@@ -2,7 +2,7 @@
 
 import os
 
-from flask import Flask
+from flask import Flask, request
 from flask_migrate import Migrate
 
 from config import Config
@@ -17,6 +17,16 @@ def create_app():
     app.config.from_object(Config)
     db.init_app(app)
     Migrate(app,db)
+
+    @app.after_request
+    def add_health_cors_headers(tx_response):
+        # Allow the public MMOVision site to check whether Render has started.
+        if request.path=="/health":
+            tx_origin=request.headers.get("Origin")
+            if tx_origin in ("https://mmovision.uk","https://www.mmovision.uk"):
+                tx_response.headers["Access-Control-Allow-Origin"]=tx_origin
+                tx_response.headers["Vary"]="Origin"
+        return tx_response
 
     @app.route("/health")
     def health():
