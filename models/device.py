@@ -9,7 +9,7 @@ field is updated whenever the client validates its licence with the
 server.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from extensions import db
 
@@ -23,7 +23,7 @@ class Device(db.Model):
     organization_id = db.Column(db.Integer, db.ForeignKey("organizations.id"), nullable=False)
     system_id = db.Column(db.String(255), nullable=False)
     machine_name = db.Column(db.String(255), nullable=True)
-    activation_timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    activation_timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     last_check = db.Column(db.DateTime, nullable=True)
     ip_address = db.Column(db.String(100), nullable=True)
     app_version = db.Column(db.String(50), nullable=True)
