@@ -5,7 +5,7 @@ import hmac
 import html
 import json
 import secrets
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -271,7 +271,7 @@ def lemonsqueezy_webhook():
             tx_order.customer_name=tx_name
             tx_order.customer_email=tx_email
         tx_order.status="paid"
-        tx_order.paid_at=datetime.utcnow()
+        tx_order.paid_at=datetime.now(timezone.utc).replace(tzinfo=None)
         db.session.commit()
 
         # Reacquire the order lock after committing the license.
