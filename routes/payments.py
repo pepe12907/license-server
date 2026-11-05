@@ -159,7 +159,7 @@ def create_checkout():
 
 @payments_bp.route("/order/<tx_reference>",methods=["GET"])
 def get_order_status(tx_reference):
-    tx_order=Order.query.filter_by(external_reference=tx_reference,payment_provider="lemonsqueezy").first()
+    tx_order=Order.query.filter_by(external_reference=tx_reference,payment_provider="lemonsqueezy").with_for_update().first()
     if not tx_order:
         return jsonify({"success":False,"message":"Order not found"}),404
     tx_result={"success":True,"status":tx_order.status}
@@ -268,12 +268,15 @@ def lemonsqueezy_webhook():
         tx_order.paid_at=datetime.utcnow()
         db.session.commit()
 
+        # Lock the order again so concurrent webhook retries cannot send duplicate emails.
+        tx_order=Order.query.filter_by(id=tx_order.id).with_for_update().first()
         if tx_order.email_sent_at is None:
             try:
                 _send_license_email(tx_order,tx_order.license)
                 tx_order.email_sent_at=datetime.utcnow()
                 db.session.commit()
             except (HTTPError,URLError,TimeoutError,RuntimeError,ValueError):
+                db.session.rollback()
                 current_app.logger.exception("License email delivery failed")
                 return jsonify({"success":False,"message":"License email delivery failed"}),500
         return jsonify({"success":True}),200
