@@ -6,7 +6,7 @@ made by client applications. Logging this information assists with
 auditing, troubleshooting and understanding how licences are used.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from extensions import db
 
@@ -25,7 +25,7 @@ class UsageLog(db.Model):
     action = db.Column(db.String(20), nullable=False)
     result = db.Column(db.String(10), nullable=False)
     reason = db.Column(db.String(255), nullable=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
     def __repr__(self) -> str:
