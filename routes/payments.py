@@ -184,7 +184,10 @@ def lemonsqueezy_webhook():
         return jsonify({"success":False,"message":"Invalid signature"}),401
 
     tx_payload=request.get_json(silent=True) or {}
-    tx_event=request.headers.get("X-Event-Name") or (tx_payload.get("meta") or {}).get("event_name")
+    tx_event=(tx_payload.get("meta") or {}).get("event_name")
+    tx_header_event=request.headers.get("X-Event-Name")
+    if tx_header_event and tx_event and tx_header_event!=tx_event:
+        return jsonify({"success":False,"message":"Event name mismatch"}),400
     tx_attributes=((tx_payload.get("data") or {}).get("attributes") or {})
     tx_custom=((tx_payload.get("meta") or {}).get("custom_data") or {})
     tx_reference=tx_custom.get("order_reference")
@@ -203,6 +206,8 @@ def lemonsqueezy_webhook():
 
     tx_provider_order_id=str((tx_payload.get("data") or {}).get("id") or "")
     if tx_event=="order_created":
+        if tx_order.status in ("refunded","partial_refund","fraudulent"):
+            return jsonify({"success":True,"ignored":True}),200
         tx_status=tx_attributes.get("status")
         tx_order.provider_payment_id=tx_provider_order_id or tx_order.provider_payment_id
         tx_order.amount_minor=int(Decimal(str(tx_attributes.get("total") or 0)))
