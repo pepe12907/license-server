@@ -11,6 +11,8 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
+from sqlalchemy import text
+
 from flask import Blueprint, current_app, jsonify, request
 
 from extensions import db
@@ -159,7 +161,7 @@ def create_checkout():
 
 @payments_bp.route("/order/<tx_reference>",methods=["GET"])
 def get_order_status(tx_reference):
-    tx_order=Order.query.filter_by(external_reference=tx_reference,payment_provider="lemonsqueezy").with_for_update().first()
+    tx_order=Order.query.filter_by(external_reference=tx_reference,payment_provider="lemonsqueezy").first()
     if not tx_order:
         return jsonify({"success":False,"message":"Order not found"}),404
     tx_result={"success":True,"status":tx_order.status}
@@ -194,7 +196,7 @@ def lemonsqueezy_webhook():
     if not tx_reference:
         return jsonify({"success":False,"message":"Missing order_reference"}),400
 
-    tx_order=Order.query.filter_by(external_reference=tx_reference,payment_provider="lemonsqueezy").first()
+    tx_order=Order.query.filter_by(external_reference=tx_reference,payment_provider="lemonsqueezy").with_for_update().first()
     if not tx_order:
         return jsonify({"success":False,"message":"Order not found"}),404
 
@@ -213,18 +215,22 @@ def lemonsqueezy_webhook():
         tx_order.amount_minor=int(Decimal(str(tx_attributes.get("total") or 0)))
         tx_order.currency=(tx_attributes.get("currency") or "USD")[:3]
         if tx_status!="paid":
-            tx_order.status=tx_status or "pending"
-            db.session.commit()
+            if tx_order.status!="paid":
+                tx_order.status=tx_status or "pending"
+                db.session.commit()
             return jsonify({"success":True}),200
 
         tx_item=tx_attributes.get("first_order_item") or {}
         tx_expected_variant=current_app.config.get(f"LEMONSQUEEZY_VARIANT_{tx_order.duration_days}")
-        if tx_expected_variant and str(tx_item.get("variant_id"))!=str(tx_expected_variant):
+        if not tx_expected_variant or str(tx_item.get("variant_id"))!=str(tx_expected_variant):
             return jsonify({"success":False,"message":"Unexpected product variant"}),400
 
         if not tx_order.license_id:
             tx_email=(tx_attributes.get("user_email") or tx_order.customer_email).strip().lower()
             tx_name=(tx_attributes.get("user_name") or tx_order.customer_name).strip()
+            # Serialize purchases using the same email; a missing user row cannot be locked.
+            if db.engine.dialect.name=="postgresql":
+                db.session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:tx_email))"),{"tx_email":tx_email})
             tx_user=User.query.filter_by(email=tx_email).first()
             if not tx_user:
                 tx_org=Organization(
@@ -268,9 +274,9 @@ def lemonsqueezy_webhook():
         tx_order.paid_at=datetime.utcnow()
         db.session.commit()
 
-        # Lock the order again so concurrent webhook retries cannot send duplicate emails.
+        # Reacquire the order lock after committing the license.
         tx_order=Order.query.filter_by(id=tx_order.id).with_for_update().first()
-        if tx_order.email_sent_at is None:
+        if tx_order.status=="paid" and tx_order.email_sent_at is None:
             try:
                 _send_license_email(tx_order,tx_order.license)
                 tx_order.email_sent_at=datetime.utcnow()
