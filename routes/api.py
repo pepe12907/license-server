@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 
 from flask import Blueprint, request, jsonify, current_app
 
@@ -136,7 +136,7 @@ def activate_license():
                 action="activate",
             )
 
-        existing_device.last_check = datetime.utcnow()
+        existing_device.last_check = datetime.now(timezone.utc).replace(tzinfo=None)
         existing_device.ip_address = get_client_ip()
         existing_device.app_version = app_version
 
@@ -180,8 +180,8 @@ def activate_license():
         organization_id=license_obj.user.organization_id,
         system_id=system_id,
         machine_name=machine_name,
-        activation_timestamp=datetime.utcnow(),
-        last_check=datetime.utcnow(),
+        activation_timestamp=datetime.now(timezone.utc).replace(tzinfo=None),
+        last_check=datetime.now(timezone.utc).replace(tzinfo=None),
         ip_address=get_client_ip(),
         app_version=app_version,
         is_active=True,
@@ -262,7 +262,7 @@ def validate_license():
             action="validate",
         )
 
-    device.last_check = datetime.utcnow()
+    device.last_check = datetime.now(timezone.utc).replace(tzinfo=None)
     device.ip_address = get_client_ip()
     device.app_version = app_version
 
@@ -334,7 +334,7 @@ def deactivate_device():
         )
 
     device.is_active = False
-    device.last_check = datetime.utcnow()
+    device.last_check = datetime.now(timezone.utc).replace(tzinfo=None)
 
     log_usage(
         action="deactivate",
