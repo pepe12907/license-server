@@ -25,6 +25,18 @@ from utils.license_utils import generate_license_key
 payments_bp = Blueprint("payments", __name__, url_prefix="/payments")
 
 
+@payments_bp.after_request
+def add_checkout_cors_headers(tx_response):
+    # Allow the public MMOVision site to call checkout and order-status endpoints.
+    tx_origin=request.headers.get("Origin")
+    if tx_origin in ("https://mmovision.uk","https://www.mmovision.uk"):
+        tx_response.headers["Access-Control-Allow-Origin"]=tx_origin
+        tx_response.headers["Access-Control-Allow-Methods"]="GET, POST, OPTIONS"
+        tx_response.headers["Access-Control-Allow-Headers"]="Content-Type"
+        tx_response.headers["Vary"]="Origin"
+    return tx_response
+
+
 def _lemonsqueezy_request(tx_payload):
     tx_api_key=current_app.config.get("LEMONSQUEEZY_API_KEY")
     if not tx_api_key:
@@ -169,6 +181,7 @@ def get_order_status(tx_reference):
         tx_result.update({
             "license_key":tx_order.license.key,
             "expiry_date":tx_order.license.expiry_date.isoformat() if tx_order.license.expiry_date else None,
+            "email_sent":tx_order.email_sent_at is not None,
         })
     return jsonify(tx_result),200
 

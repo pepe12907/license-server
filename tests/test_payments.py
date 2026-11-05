@@ -266,3 +266,29 @@ def test_checkout_rejects_missing_provider_configuration(app,client):
         "duration_days":60,
     })
     assert tx_response.status_code==503
+
+
+def test_checkout_cors_allows_public_site_preflight(client):
+    tx_response=client.options(
+        "/payments/checkout",
+        headers={
+            "Origin":"https://mmovision.uk",
+            "Access-Control-Request-Method":"POST",
+            "Access-Control-Request-Headers":"content-type",
+        },
+    )
+    assert tx_response.status_code==200
+    assert tx_response.headers["Access-Control-Allow-Origin"]=="https://mmovision.uk"
+    assert "POST" in tx_response.headers["Access-Control-Allow-Methods"]
+    assert "Content-Type" in tx_response.headers["Access-Control-Allow-Headers"]
+
+
+def test_checkout_cors_rejects_unlisted_origin(client):
+    tx_response=client.options(
+        "/payments/checkout",
+        headers={
+            "Origin":"https://example.com",
+            "Access-Control-Request-Method":"POST",
+        },
+    )
+    assert "Access-Control-Allow-Origin" not in tx_response.headers
