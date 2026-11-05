@@ -8,7 +8,7 @@ their data, preventing all associated licences and users from
 authenticating while retaining historical records.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from extensions import db
 
@@ -25,7 +25,7 @@ class Organization(db.Model):
     dashboard_token = db.Column(db.String(128), unique=True, nullable=True)
     dashboard_enabled = db.Column(db.Boolean, default=True)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     # Relationships
     users = db.relationship("User", backref="organization", lazy=True)
