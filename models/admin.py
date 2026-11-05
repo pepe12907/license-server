@@ -7,7 +7,7 @@ should exist. Credentials are set via environment variables on
 startup and hashed for storage.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from extensions import db
 
@@ -26,7 +26,7 @@ class Admin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     def __repr__(self) -> str:
         return f"<Admin {self.email}>"
