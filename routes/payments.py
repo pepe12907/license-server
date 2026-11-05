@@ -181,6 +181,7 @@ def get_order_status(tx_reference):
         tx_result.update({
             "license_key":tx_order.license.key,
             "expiry_date":tx_order.license.expiry_date.isoformat() if tx_order.license.expiry_date else None,
+            "email_sent":tx_order.email_sent_at is not None,
         })
     return jsonify(tx_result),200
 
