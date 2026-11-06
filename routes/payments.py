@@ -18,7 +18,6 @@ from flask import Blueprint, current_app, jsonify, request
 from extensions import db
 from models.license import License
 from models.order import Order
-from models.organization import Organization
 from models.user import User
 from utils.license_utils import generate_license_key
 
@@ -247,16 +246,8 @@ def lemonsqueezy_webhook():
                 db.session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:tx_email))"),{"tx_email":tx_email})
             tx_user=User.query.filter_by(email=tx_email).first()
             if not tx_user:
-                tx_org=Organization(
-                    name=f"Throne - {tx_name}",
-                    contact_person=tx_name,
-                    contact_email=tx_email,
-                    is_active=True,
-                )
-                db.session.add(tx_org)
-                db.session.flush()
                 tx_user=User(
-                    organization_id=tx_org.id,
+                    organization_id=1,
                     name=tx_name,
                     email=tx_email,
                     is_active=True,
