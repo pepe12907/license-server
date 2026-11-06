@@ -100,8 +100,8 @@ def create_checkout():
     try:
         tx_duration=int(tx_duration)
     except (TypeError,ValueError):
-        return jsonify({"success":False,"message":"duration_days must be 60 or 120"}),400
-    if tx_duration not in (60,120):
+        return jsonify({"success":False,"message":"duration_days must be 30, 60 or 120"}),400
+    if tx_duration not in (30,60,120):
         return jsonify({"success":False,"message":"duration_days must be 60 or 120"}),400
 
     tx_variant_id=current_app.config.get(f"LEMONSQUEEZY_VARIANT_{tx_duration}")
