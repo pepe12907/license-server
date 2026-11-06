@@ -268,7 +268,7 @@ def lemonsqueezy_webhook():
                 status="active",
                 start_date=tx_purchase_date,
                 expiry_date=tx_purchase_date+timedelta(days=tx_order.duration_days-1),
-                max_devices=1,
+                max_devices=2,
             )
             db.session.add(tx_license)
             db.session.flush()
