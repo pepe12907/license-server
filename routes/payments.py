@@ -82,6 +82,7 @@ def _send_license_email(tx_order,tx_license):
         headers={
             "Authorization":f"Bearer {tx_api_key}",
             "Content-Type":"application/json",
+            "User-Agent":"MmoVision-LicenseServer/1.0",
         },
         method="POST",
     )
