@@ -18,6 +18,7 @@ class Config:
     # Lemon Squeezy: keep test mode enabled until live credentials are configured.
     LEMONSQUEEZY_API_KEY=os.environ.get("LEMONSQUEEZY_API_KEY")
     LEMONSQUEEZY_STORE_ID=os.environ.get("LEMONSQUEEZY_STORE_ID")
+    LEMONSQUEEZY_VARIANT_30=os.environ.get("LEMONSQUEEZY_VARIANT_30")
     LEMONSQUEEZY_VARIANT_60=os.environ.get("LEMONSQUEEZY_VARIANT_60")
     LEMONSQUEEZY_VARIANT_120=os.environ.get("LEMONSQUEEZY_VARIANT_120")
     LEMONSQUEEZY_WEBHOOK_SECRET=os.environ.get("LEMONSQUEEZY_WEBHOOK_SECRET")
