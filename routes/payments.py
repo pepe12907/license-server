@@ -294,7 +294,12 @@ def lemonsqueezy_webhook():
                 _send_license_email(tx_order,tx_order.license)
                 tx_order.email_sent_at=datetime.now(timezone.utc).replace(tzinfo=None)
                 db.session.commit()
-            except (HTTPError,URLError,TimeoutError,RuntimeError,ValueError):
+            except HTTPError as tx_error:
+                tx_error_body=tx_error.read().decode("utf-8",errors="replace")
+                db.session.rollback()
+                current_app.logger.error("License email delivery failed: Resend HTTP %s: %s",tx_error.code,tx_error_body)
+                return jsonify({"success":False,"message":"License email delivery failed"}),500
+            except (URLError,TimeoutError,RuntimeError,ValueError):
                 db.session.rollback()
                 current_app.logger.exception("License email delivery failed")
                 return jsonify({"success":False,"message":"License email delivery failed"}),500
